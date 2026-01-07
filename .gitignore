@@ -1,0 +1,177 @@
+############################################
+# Base (Python / OS / editors)
+############################################
+**/__pycache__/
+**.pyc
+**.pyo
+**.pyd
+**.ipynb_checkpoints/
+
+.DS_Store
+*.swp
+.vscode/
+.idea/
+#cache
+
+**/.cache/
+############################################
+# Envs / secrets (si jamais)
+############################################
+.venv/
+.env
+
+############################################
+# nnUnetFrame: garder l'arbo, ignorer data & outputs
+# On ignore TOUT ce qui est dans ces dossiers,
+# mais on garde un fichier .gitkeep pour préserver l'arborescence
+############################################
+
+# nnUNet_raw (datasets format nnUNet)
+# nnUNet_raw : préserver l'arbo DatasetXXX, ignorer le contenu
+nnUnetFrame/nnUNet_raw/*
+!nnUnetFrame/nnUNet_raw/Dataset421_TDSI2025/
+!nnUnetFrame/nnUNet_raw/Dataset422_TDSI2025/
+!nnUnetFrame/nnUNet_raw/Dataset423_TDSI2025/
+!nnUnetFrame/nnUNet_raw/Dataset424_TDSI2025/
+
+nnUnetFrame/nnUNet_raw/Dataset421_TDSI2025/*
+!nnUnetFrame/nnUNet_raw/Dataset421_TDSI2025/.gitkeep
+
+nnUnetFrame/nnUNet_raw/Dataset422_TDSI2025/*
+!nnUnetFrame/nnUNet_raw/Dataset422_TDSI2025/.gitkeep
+
+nnUnetFrame/nnUNet_raw/Dataset423_TDSI2025/*
+!nnUnetFrame/nnUNet_raw/Dataset423_TDSI2025/.gitkeep
+
+nnUnetFrame/nnUNet_raw/Dataset424_TDSI2025/*
+!nnUnetFrame/nnUNet_raw/Dataset424_TDSI2025/.gitkeep
+
+# nnUNet_preprocessed
+nnUnetFrame/nnUNet_preprocessed/*
+!nnUnetFrame/nnUNet_preprocessed/.gitkeep
+
+# nnUNet_results
+nnUnetFrame/nnUNet_results/*
+!nnUnetFrame/nnUNet_results/.gitkeep
+
+# Datasets non formatés
+# Raw non-formatted datasets (ignored entirely)
+nnUnetFrame/MICCAI2016_train/
+nnUnetFrame/MICCAI2016_test/
+nnUnetFrame/open_ms_data-master/
+############################################
+# SegResNetFrame: garder l'arbo, ignorer modèles & inférences
+############################################
+
+# Résultats d'entraînement CV (models best/latest)
+#SegResNetFrame/SegResNet_results/cross_validation_training/*
+#!SegResNetFrame/SegResNet_results/cross_validation_training/.gitkeep
+
+# Option: préserver arbo Dataset421..424/fold_0..4 via .gitkeep dédiés
+
+
+# Inférences SegResNet
+
+
+SegResNetFrame/SegResNet_inference/cross_val_inference/Dataset421_cv_inference/*
+!SegResNetFrame/SegResNet_inference/cross_val_inference/Dataset421_cv_inference/.gitkeep
+SegResNetFrame/SegResNet_inference/cross_val_inference/Dataset422_cv_inference/*
+!SegResNetFrame/SegResNet_inference/cross_val_inference/Dataset422_cv_inference/.gitkeep
+SegResNetFrame/SegResNet_inference/cross_val_inference/Dataset423_cv_inference/*
+!SegResNetFrame/SegResNet_inference/cross_val_inference/Dataset423_cv_inference/.gitkeep
+SegResNetFrame/SegResNet_inference/cross_val_inference/Dataset424_cv_inference/*
+!SegResNetFrame/SegResNet_inference/cross_val_inference/Dataset424_cv_inference/.gitkeep
+
+
+#Resultats d'entrainement segresnet
+
+#421
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421/fold_0/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421/fold_0/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421/fold_1/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421/fold_1/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421/fold_2/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421/fold_2/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421/fold_3/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421/fold_3/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421/fold_4/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421/fold_4/.gitkeep
+
+#dataset422
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset422/fold_0/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset422/fold_0/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset422/fold_1/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset422/fold_1/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset422/fold_2/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset422/fold_2/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset422/fold_3/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset422/fold_3/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset422/fold_4/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset422/fold_4/.gitkeep
+
+#dataset423
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/fold_0/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/fold_0/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/fold_1/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/fold_1/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/fold_2/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/fold_2/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/fold_3/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/fold_3/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/fold_4/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/fold_4/.gitkeep
+
+#dataset424
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/fold_0/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/fold_0/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/fold_1/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/fold_1/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/fold_2/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/fold_2/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/fold_3/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/fold_3/.gitkeep
+SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/fold_4/*
+!SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/fold_4/.gitkeep
+
+
+############################################
+# LST predictions: garder l'arbo, ignorer masques
+############################################
+lstFrame/*
+!lstFrame/.gitkeep
+
+lstFrame/lst_421_preds_nnunet_th0.40/*
+!lstFrame/lst_421_preds_nnunet_th0.40/.gitkeep
+lstFrame/lst_422_preds_nnunet_th0.40/*
+!lstFrame/lst_422_preds_nnunet_th0.40/.gitkeep
+lstFrame/lst_423_preds_nnunet_th0.40/*
+!lstFrame/lst_423_preds_nnunet_th0.40/.gitkeep
+lstFrame/lst_424_preds_nnunet_th0.40/*
+!lstFrame/lst_424_preds_nnunet_th0.40/.gitkeep
+
+############################################
+# Benchmark results: garder l'arbo, ignorer json results
+############################################
+
+benchmark_results/Dataset421/*
+!benchmark_results/Dataset421/.gitkeep
+benchmark_results/Dataset422/*
+!benchmark_results/Dataset422/.gitkeep
+benchmark_results/Dataset423/*
+!benchmark_results/Dataset423/.gitkeep
+benchmark_results/Dataset424/*
+!benchmark_results/Dataset424/.gitkeep
+
+############################################
+#  (au cas où)
+############################################
+*.ckpt
+*.pth
+*.pt
+*.onnx
+*.npz
+*.npy
+logs/
+runs/
+wandb/
+

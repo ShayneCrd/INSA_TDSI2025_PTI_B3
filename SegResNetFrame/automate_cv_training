@@ -1,0 +1,16 @@
+
+for i in range (0, 4):
+
+do:
+python train_SegResNet.py  
+--nnunet_raw /local/scardell/nnUnetFrame/nnUNet_raw/Dataset423_TDSI2025/ \ 
+--out /local/scardell/SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/fold[i] \ 
+--use_splits /local/scardell/nnUnetFrame/nnUNet_preprocessed/Dataset423_TDSI2025/splits_final.json \ 
+--fold i
+--modalities 0,1,2,3,4,5,6,7,8  \  
+ --epochs 300 \
+ --patch 128,128,32 \ 
+ --batch_size 1 \
+ --lr 3e-4 \
+
+

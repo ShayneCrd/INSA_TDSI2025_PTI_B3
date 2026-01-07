@@ -1,0 +1,274 @@
+#!/usr/bin/env python3
+import os
+import json
+import shutil
+from pathlib import Path
+from typing import Optional, Tuple, List, Dict
+
+# =============================
+# CONFIG
+# =============================
+
+DATASET_ID = 423
+DATASET_NAME = f"Dataset{DATASET_ID:03d}_TDSI2025"
+
+NNUNET_ROOT = Path(__file__).resolve().parent
+
+TARGET_PATH = NNUNET_ROOT / "nnUNet_raw"
+TRAIN_ROOT  = NNUNET_ROOT / "open_ms_data-master/longitudinal/coregistered"
+TEST_ROOT   = NNUNET_ROOT / "open_ms_data-master/cross_sectional/coregistered_resampled/"
+
+# Expected filenames for longitudinal (per patient folder):
+# visit1: study1_T1W.nii.gz, study1_T2W.nii.gz, study1_FLAIR.nii.gz
+# visit2: study2_T1W.nii.gz, study2_T2W.nii.gz, study2_FLAIR.nii.gz
+# gt: gt.nii.gz
+TRAIN_VISITS = [
+    ("study1_T1W.nii.gz", "study1_T2W.nii.gz", "study1_FLAIR.nii.gz"),
+    ("study2_T1W.nii.gz", "study2_T2W.nii.gz", "study2_FLAIR.nii.gz"),
+]
+TRAIN_GT_NAME_CANDIDATES = ["gt.nii.gz", "gt.nii"]
+
+# Expected filenames for cross-sectional (per patient folder):
+# T1W.nii.gz, T2W.nii.gz, FLAIR.nii.gz
+# consensus_gt.nii.gz
+TEST_MODALITIES = ("T1W.nii.gz", "T2W.nii.gz", "FLAIR.nii.gz")
+TEST_GT_NAME_CANDIDATES = ["consensus_gt.nii.gz", "consensus_gt.nii", "gt.nii.gz", "gt.nii"]
+
+# nnU-Net modality order
+MODALITY_MAP = {0: "T1", 1: "T2", 2: "FLAIR"}
+
+# If you truly want to shift test IDs, set TEST_ID_SHIFT (e.g., +100)
+# Example: patient 24 -> 124
+TEST_ID_SHIFT = 0
+
+# Behavior
+OVERWRITE_EXISTING = False  # set True to recreate dataset from scratch
+COPY_MODE = "copy"          # "copy" or "symlink" (symlink faster, but be careful moving datasets)
+
+# =============================
+# HELPERS
+# =============================
+
+def _ensure_dir(p: Path) -> None:
+    p.mkdir(parents=True, exist_ok=True)
+
+def _copy_or_symlink(src: Path, dst: Path) -> None:
+    if dst.exists():
+        return
+    if COPY_MODE == "symlink":
+        os.symlink(str(src), str(dst))
+    else:
+        shutil.copy2(str(src), str(dst))
+
+def parse_patient_id_from_foldername(name: str) -> Optional[int]:
+    """
+    Extract integer patient index from folder names like 'patient01', 'patient24', etc.
+    Returns int or None.
+    """
+    lower = name.lower()
+    if not lower.startswith("patient"):
+        return None
+    suffix = lower.replace("patient", "")
+    if suffix.isdigit():
+        return int(suffix)
+    return None
+
+def case_id_train(patient_id: int, visit_idx: int) -> str:
+    """
+    visit_idx = 0 for visit1 -> OPENMS_00xx
+    visit_idx = 1 for visit2 -> OPENMS_10xx
+    Example patient 1 -> OPENMS_0001 / OPENMS_1001
+    """
+    if visit_idx == 0:
+        return f"OPENMS_{patient_id:04d}"
+    elif visit_idx == 1:
+        return f"OPENMS_{1000 + patient_id:04d}"
+    else:
+        raise ValueError("visit_idx must be 0 or 1")
+
+def case_id_test(patient_id: int) -> str:
+    """
+    Example patient 24 -> OPENMS_0124 if TEST_ID_SHIFT=100
+    """
+    pid = patient_id + TEST_ID_SHIFT
+    return f"OPENMS_{pid:04d}"
+
+def find_existing_file(folder: Path, candidates: List[str]) -> Optional[Path]:
+    for name in candidates:
+        p = folder / name
+        if p.exists():
+            return p
+    return None
+
+def require_file(p: Optional[Path], desc: str, errors: List[str]) -> Optional[Path]:
+    if p is None:
+        errors.append(desc)
+    return p
+
+# =============================
+# MAIN CONVERSION
+# =============================
+
+def convert_openMs_to_nnUnet() -> None:
+    dataset_dir = Path(TARGET_PATH) / DATASET_NAME
+    imagesTr = dataset_dir / "imagesTr"
+    labelsTr = dataset_dir / "labelsTr"
+    imagesTs = dataset_dir / "imagesTs"
+    labelsTs = dataset_dir / "labelsTs"  # you asked for labelsTs too
+
+    if dataset_dir.exists() and OVERWRITE_EXISTING:
+        shutil.rmtree(dataset_dir)
+
+    _ensure_dir(imagesTr)
+    _ensure_dir(labelsTr)
+    _ensure_dir(imagesTs)
+    _ensure_dir(labelsTs)
+
+    train_patients = sorted([p for p in Path(TRAIN_ROOT).iterdir() if p.is_dir()])
+    test_patients  = sorted([p for p in Path(TEST_ROOT).iterdir() if p.is_dir()])
+
+    # -----------------------------
+    # Build Training
+    # -----------------------------
+    train_cases_written = 0
+    train_errors: List[str] = []
+
+    for patient_folder in train_patients:
+        pid = parse_patient_id_from_foldername(patient_folder.name)
+        if pid is None:
+            continue
+
+        gt_path = find_existing_file(patient_folder, TRAIN_GT_NAME_CANDIDATES)
+        if gt_path is None:
+            train_errors.append(f"[TRAIN] {patient_folder.name}: missing GT ({TRAIN_GT_NAME_CANDIDATES})")
+            continue
+
+        # For each of the 2 visits => 2 separate cases
+        for visit_idx, (t1_name, t2_name, fl_name) in enumerate(TRAIN_VISITS):
+            t1 = patient_folder / t1_name
+            t2 = patient_folder / t2_name
+            fl = patient_folder / fl_name
+
+            missing = []
+            require_file(t1 if t1.exists() else None, f"{patient_folder.name} visit{visit_idx+1}: missing {t1_name}", missing)
+            require_file(t2 if t2.exists() else None, f"{patient_folder.name} visit{visit_idx+1}: missing {t2_name}", missing)
+            require_file(fl if fl.exists() else None, f"{patient_folder.name} visit{visit_idx+1}: missing {fl_name}", missing)
+            if missing:
+                train_errors.extend([f"[TRAIN] {m}" for m in missing])
+                continue
+
+            cid = case_id_train(pid, visit_idx)
+
+            # imagesTr: OPENMS_xxxx_0000/0001/0002
+            dst_t1 = imagesTr / f"{cid}_0000.nii.gz"
+            dst_t2 = imagesTr / f"{cid}_0001.nii.gz"
+            dst_fl = imagesTr / f"{cid}_0002.nii.gz"
+
+            # labelsTr: OPENMS_xxxx.nii.gz (duplicate same GT for both visits)
+            dst_gt = labelsTr / f"{cid}.nii.gz"
+
+            _copy_or_symlink(t1, dst_t1)
+            _copy_or_symlink(t2, dst_t2)
+            _copy_or_symlink(fl, dst_fl)
+            _copy_or_symlink(gt_path, dst_gt)
+
+            train_cases_written += 1
+
+    # -----------------------------
+    # Build Test
+    # -----------------------------
+    test_cases_written = 0
+    test_errors: List[str] = []
+
+    for patient_folder in test_patients:
+        pid = parse_patient_id_from_foldername(patient_folder.name)
+        if pid is None:
+            continue
+
+        t1 = patient_folder / TEST_MODALITIES[0]
+        t2 = patient_folder / TEST_MODALITIES[1]
+        fl = patient_folder / TEST_MODALITIES[2]
+
+        missing = []
+        require_file(t1 if t1.exists() else None, f"{patient_folder.name}: missing {TEST_MODALITIES[0]}", missing)
+        require_file(t2 if t2.exists() else None, f"{patient_folder.name}: missing {TEST_MODALITIES[1]}", missing)
+        require_file(fl if fl.exists() else None, f"{patient_folder.name}: missing {TEST_MODALITIES[2]}", missing)
+
+        if missing:
+            test_errors.extend([f"[TEST] {m}" for m in missing])
+            continue
+
+        gt_path = find_existing_file(patient_folder, TEST_GT_NAME_CANDIDATES)
+        if gt_path is None:
+            test_errors.append(f"[TEST] {patient_folder.name}: missing GT ({TEST_GT_NAME_CANDIDATES})")
+            continue
+
+        cid = case_id_test(pid)
+
+        dst_t1 = imagesTs / f"{cid}_0000.nii.gz"
+        dst_t2 = imagesTs / f"{cid}_0001.nii.gz"
+        dst_fl = imagesTs / f"{cid}_0002.nii.gz"
+        dst_gt = labelsTs / f"{cid}.nii.gz"
+
+        _copy_or_symlink(t1, dst_t1)
+        _copy_or_symlink(t2, dst_t2)
+        _copy_or_symlink(fl, dst_fl)
+        _copy_or_symlink(gt_path, dst_gt)
+
+        test_cases_written += 1
+
+    # -----------------------------
+    # dataset.json
+    # -----------------------------
+    # Count unique cases (labels) in Tr/Ts
+    tr_labels = sorted([p for p in labelsTr.iterdir() if p.is_file() and (p.name.endswith(".nii.gz") or p.name.endswith(".nii"))])
+    ts_labels = sorted([p for p in labelsTs.iterdir() if p.is_file() and (p.name.endswith(".nii.gz") or p.name.endswith(".nii"))])
+
+    dataset_json = {
+        "name": "TDSI2025_OPENMS",
+        "description": "OpenMS: longitudinal coregistered (train) with duplicated GT per visit; cross-sectional coregistered_resampled (test).",
+        "reference": "",
+        "licence": "",
+        "release": "0.0",
+        "tensorImageSize": "3D",
+        "modality": {str(k): v for k, v in MODALITY_MAP.items()},
+        "labels": {
+            "background": 0,
+            "lesion": 1
+        },
+        "numTraining": len(tr_labels),
+        "numTest": len(ts_labels),
+        # nnU-Net v2 doesn't require explicit training list. Keeping minimal.
+        "file_ending": ".nii.gz"
+    }
+
+    with open(dataset_dir / "dataset.json", "w") as f:
+        json.dump(dataset_json, f, indent=2)
+
+    # -----------------------------
+    # Summary
+    # -----------------------------
+    print("============================================================")
+    print(f"[OK] Built {DATASET_NAME} in {dataset_dir}")
+    print(f"  imagesTr: {imagesTr}")
+    print(f"  labelsTr: {labelsTr}")
+    print(f"  imagesTs: {imagesTs}")
+    print(f"  labelsTs: {labelsTs}")
+    print("------------------------------------------------------------")
+    print(f"Train cases written (visits as cases): {train_cases_written}")
+    print(f"Test  cases written:                  {test_cases_written}")
+    print(f"dataset.json numTraining={len(tr_labels)} numTest={len(ts_labels)}")
+    if train_errors:
+        print(f"\n[WARN] Train issues: {len(train_errors)} (first 10)")
+        for e in train_errors[:10]:
+            print("  ", e)
+    if test_errors:
+        print(f"\n[WARN] Test issues: {len(test_errors)} (first 10)")
+        for e in test_errors[:10]:
+            print("  ", e)
+    print("============================================================")
+
+
+if __name__ == "__main__":
+    convert_openMs_to_nnUnet()
+
