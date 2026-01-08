@@ -128,6 +128,13 @@ labelsTr_path
 imagesTs_path 
 dataset_json_path 
 
+then you need to perform this following command (we had trouble implementing the labelsTs function to our base conversion script so we decided to provide it separatly:
+
+```bash
+cd ..
+build_labelsTs.py --dataset_id 422 --src path/to/nnUnetFrame/nnUnetFrame/MICCAI2016_test/ --nnunet_dataset path/to/nnUNet_raw/Dataset422_TDSI2025/
+```
+
 Once the dataset422_TDSI has been created in nnUnet_raw, we have to fix the affines on the labels (an issue noticed using SegResNet). We basically resample all modalities based on one chosen modality. ref_mode 2 => each image is resampled in the flair space. --inplace overwrites the dataset_raw mentionned
 
 ```bash
