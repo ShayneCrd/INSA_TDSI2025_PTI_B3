@@ -110,8 +110,9 @@ in your terminal:
 cd path/to/nnUnetFrame
 
 **Format Dataset 421:**
-
---Later fix
+```bash
+convertMsLesSeg_to_nnUnet.py
+```
 
 **Format Dataset 422:**
 
@@ -259,9 +260,18 @@ python infer_SegResNet.py     --nnunet_raw /local/scardell/nnUnetFrame/nnUNet_ra
 python infer_SegResNet.py     --nnunet_raw /local/scardell/nnUnetFrame/nnUNet_raw/Dataset424_TDSI2025/     --cv_dir /local/scardell/SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/     --out /local/scardell/SegResNetFrame/SegResNet_inference/cross_val_inference/     --modalities 0,1,2,3     --patch 128,128,32     --save_prob --use_cv
 ```
 
-After the inference is stored, the generated masks and probability maps are found under: **.../SegResNetFrame/SegResNet_results/cross_validation_training/Dataset_id/**
+After the inference is stored, the generated masks and probability maps are found under: **.../SegResNetFrame/SegResNet_results/cross_validation_training/Dataset_id/**.  The inference folders contain a mask and its probability map: [case_id].nii.gz, [case_id]_prob.nii.gz. 
 
+###LST-AI:
 
+If you have been able to install and setup lst-AI, we have provided an automation for inference, as it only perform one-shot segmentations on a T1 + FLAIR pair.Go in the project's root directory:
+
+```bash
+cd lstFrame
+python automate_lst.py [Dataset_id] 
+```
+where Dataset_id can take the values:  [421,422,423,424]
+After that, you should have all inferences stored by dataset id, stored in lstFrame. The inference folders contain a mask and its probability map: [case_id].nii.gz, [case_id]_prob.nii.gz. 
 
 ###Benchmarking:
 
