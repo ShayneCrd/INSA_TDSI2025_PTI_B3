@@ -8,6 +8,10 @@ NNUNET_RAW="/local/scardell/nnUnetFrame/nnUNet_raw/Dataset421_TDSI2025"
 SPLITS="/local/scardell/nnUnetFrame/nnUNet_preprocessed/Dataset421_TDSI2025/splits_final.json"
 OUT_ROOT="/local/scardell/SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421"
 
+
+set -euo pipefail
+
+
 MODALITIES="0,1,2"
 EPOCHS=300
 PATCH="128,128,32"
