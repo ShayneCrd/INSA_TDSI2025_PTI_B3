@@ -61,7 +61,7 @@ Scripts are provided to:
 ### Hardware
 All experiments were conducted on an **RTX 3090 Ti (24 GB VRAM)**.
 
-⚠️ Notes:
+Notes:
 - RTX 4000 series may work
 - RTX 5000 series (e.g. RTX 5090) caused **compatibility issues** with nnU-Net and SegResNet
 
@@ -109,11 +109,11 @@ in your terminal:
 
 cd path/to/nnUnetFrame
 
-###Format Dataset 421:
+**Format Dataset 421:**
 
 --Later fix
 
-###Format Dataset 422:
+**Format Dataset 422:**
 
 ```bash
 python convert_MICCAI_to_nnUNet.py
@@ -154,23 +154,130 @@ skullstrip_and_diff_423_424.py
 The datasets conversion and pre-processing is done, we can now verify the datasets integrity using nnU-Net.
 Anywhere in the project directory, run:
 
-###For Dataset421: 
+**For Dataset421:**
 ```bash
 nnUNetv2_plan_and_preprocess -d 421 --verify_dataset_integrity"
 ```
-###For Dataset422: 
+**For Dataset422:**
 ```bash
 nnUNetv2_plan_and_preprocess -d 422 --verify_dataset_integrity"
 ```
-###For Dataset423: 
+**For Dataset423:** 
 ```bash
 nnUNetv2_plan_and_preprocess -d 423 --verify_dataset_integrity"
 ```
-###For Dataset424: 
+**For Dataset424:**
 ```bash
 nnUNetv2_plan_and_preprocess -d 424 --verify_dataset_integrity"
 ```
 
-Once this step is done, we can perform nnUNet preprocessing.
+this step will create a new subfolder in your nnUNet_preprocessed folder named after the dataset. Once the command is completed there will be a dataset_fingerprint.json,a nnUNetPlans as well as subfolders containing the preprocessed data for the UNet configurations. Under nUNet_preprocessed, check which one of these plans is present: nnUNetPlans_2d, nnUNetPlans_3d_lowres, nnUNetPlans_3d_fullres, and if splits_final.json is present (useful for cross validation training
+---
+###Training on datasets
+
+ We have trained all datasets on 3d_fullres but you can change the UNet_CONFIGURATION in the command:
+nnUNetv2_train DATASET_ID UNET_CONFIGURATION FOLD -npz
+
+we are performing cross validation training, fold by fold, once a fold is trained, launch the next fold training, one fold can take up to 1 day to fully train. At each epoch, nnU-Net saves the  best model found (based on pseudo dice) and the latest model. If you want to continue a training, use the extension --c:
+
+**Full training example on dataset 421**
+```bash
+nnUNetv2_train 421 3d_fullres 4 -npz
+nnUNetv2_train 421 3d_fullres 3 -npz
+nnUNetv2_train 421 3d_fullres 2 -npz
+nnUNetv2_train 421 3d_fullres 1 -npz
+nnUNetv2_train 421 3d_fullres 0 -npz
+```
+For other datasets, just replace the Dataset_id by one in the list {421,422,423,424}
+
+once all the datasets have been trained,we have created an empty folder called **pred_all_folds** under **nnUNet_results/DatasetXXX_TDSI2025/**, next to the **folder nnUNetTrainer__nnUNetPlans__3d_fullres**. pred_all_folds is where we store the nnUNet infered masks.
+Those should be the two folders for each dataset in nnUNet_results. 
+
+ we can now perform the inference:
+
+###Inference on datasets
+
+for each dataset, run:
+
+```bash
+nnUNetv2_predict -i INPUT_FOLDER -o OUTPUT_FOLDER -d DATASET_NAME_OR_ID -c CONFIGURATION --save_probabilities -chk checkpoint_best.pth
+```
+
+example:
+```bash
+nnUNetv2_predict -i /local/scardell/nnUnetFrame/nnUNet_raw/Dataset421_TDSI2025/ -o /local/scardell/nnUnetFrame/nnUNet_results/Dataset421_TDSI2025/pred_all_folds/ -d 421 -c 3d_fullres --save_probabilities -chk checkpoint_best.pth
+```
+Once nnUNet inference is performed for each dataset, we can move on to SegResNet
+
+---
+
+###Training on SegResNet:
+
+if you are in the root of the project:
+
+```bash
+cd SegResNetFrame
+```
+
+**train_SegResNet.py** is the script which performs the training. The cross validation training is implemented with the bash script : **automate_cv_train_2.sh** which basically automates train_segResNet based on the folds determined by nnUNet.
+
+**for each dataset**, run:
+
+```bash
+bash automate_cv_train_2.sh Dataset_id 
+```
+for example: 
+```bash
+bash automate_cv_train_2.sh 421
+```
+This scripts saves each fold model in **SegResNetFrame/SegResNet_results/cross_validation_training/** under the datasets name.
+
+###Infering on SegResNet:
+
+After all the datasets have been trained, we can perform the inference.
+in the directory **SegResNetFrame**, run:
+
+**adapt the path before nnUnetFrame to yours, here it's /local/scardell**
+
+**Dataset421**
+```bash
+python infer_SegResNet.py     --nnunet_raw /local/scardell/nnUnetFrame/nnUNet_raw/Dataset421_TDSI2025/     --cv_dir /local/scardell/SegResNetFrame/SegResNet_results/cross_validation_training/Dataset421/     --out /local/scardell/SegResNetFrame/SegResNet_inference/cross_val_inference/     --modalities 0,1,2     --patch 128,128,32   --save_prob --use_cv
+```
+
+**Dataset422**
+```bash
+python infer_SegResNet.py     --nnunet_raw /local/scardell/nnUnetFrame/nnUNet_raw/Dataset422_TDSI2025/     --cv_dir /local/scardell/SegResNetFrame/SegResNet_results/cross_validation_training/Dataset422/     --out /local/scardell/SegResNetFrame/SegResNet_inference/cross_val_inference/     --modalities 0,1,2     --patch 128,128,32   --save_prob --use_cv
+```
+
+**Dataset423**
+```bash
+python infer_SegResNet.py     --nnunet_raw /local/scardell/nnUnetFrame/nnUNet_raw/Dataset423_TDSI2025/     --cv_dir /local/scardell/SegResNetFrame/SegResNet_results/cross_validation_training/Dataset423/     --out /local/scardell/SegResNetFrame/SegResNet_inference/cross_val_inference/     --modalities 0,1,2,3,4,5,6,7,8     --patch 128,128,32     --save_prob --use_cv
+```
+
+**Dataset424**
+```bash
+python infer_SegResNet.py     --nnunet_raw /local/scardell/nnUnetFrame/nnUNet_raw/Dataset424_TDSI2025/     --cv_dir /local/scardell/SegResNetFrame/SegResNet_results/cross_validation_training/Dataset424/     --out /local/scardell/SegResNetFrame/SegResNet_inference/cross_val_inference/     --modalities 0,1,2,3     --patch 128,128,32     --save_prob --use_cv
+```
+
+After the inference is stored, the generated masks and probability maps are found under: **.../SegResNetFrame/SegResNet_results/cross_validation_training/Dataset_id/**
+
+
+
+###Benchmarking:
+
+Now that we have our nnUNet, SegResNet and lst-AI predictions, we can calculate the metrics to evaluate their performance. Prior to this action, it is always interesting to visualize the predictions and compare them to the ground truths stored in the labelsTs section in nnUNet_raw. We have used the viewer provided by Remy Cohan: https://www.neuropsis.org/nifti_viewer.html, which is a drag-and-drop solution.
+
+
+each dataset is benchmarked separately:
+
+**adapt the path roots to yours**
+```bash
+python benchmark.py --dataset_id 421 --labelsTs /path/to/nnUnetFrame/nnUNet_raw/Dataset421_TDSI2025/labelsTs/ --models '{"nnunet":"/path/to/nnUnetFrame/nnUNet_results/Dataset421_TDSI2025/pred_all_folds/","segresnet":"/path/to/SegResNetFrame/SegResNet_inference/Dataset421_inference/","lst":"/path/to/lstFrame/preds_421/"}' --iou_thresholds '0.2,0.5' --save_json benchmark_results/Dataset421
+
+python benchmark.py --dataset_id 422 --labelsTs /path/to/nnUnetFrame/nnUNet_raw/Dataset422_TDSI2025/labelsTs/ --models '{"nnunet":"/path/to/nnUnetFrame/nnUNet_results/Dataset422_TDSI2025/pred_all_folds/","segresnet":"/path/to/SegResNetFrame/SegResNet_inference/Dataset422_inference/","lst":"/path/to/lstFrame/preds_422"}' --iou_thresholds '0.2,0.5' --save_json benchmark_results/Dataset422
+```
+...Same reasoning for dataset 423 and 424, just adapt the dataset id each time
+
+
 
 
