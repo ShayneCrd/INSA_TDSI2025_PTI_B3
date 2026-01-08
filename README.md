@@ -33,7 +33,7 @@ This project compares three segmentation approaches:
 For users with **ENS-Lyon accounts**, it is **mandatory** to use the `monai-dev` conda environment, which contains all required dependencies.
 
 If you are **not on an ENS system**, follow this installation guide:  
-👉 https://www.creatis.insa-lyon.fr/~grenier/?p=409
+https://www.creatis.insa-lyon.fr/~grenier/?p=409
 
 ### Pipeline dependency
 This project strictly follows **nnU-Net conventions**:
@@ -51,7 +51,7 @@ LST-AI inference was performed on a **separate machine**, as it requires:
 - a dedicated virtual environment
 
 Official setup instructions are available here:  
-👉 https://github.com/CompImg/LST-AI
+https://github.com/CompImg/LST-AI
 
 Scripts are provided to:
 - run LST-AI inference
@@ -74,17 +74,17 @@ first, start by cloning the repository on your machine:
 ```bash
 
 git clone https://github.com/ShayneCrd/INSA_TDSI2025_PTI_B3.git
-
+```
 then deactivate the current conda environment for safety and activate monai-dev or you current working environment
-
+```bash
 conda deactivate
 conda activate monai-dev  #or the name of your working environment
-
+```
 We then set the environment variables for nnUNet_raw, nnUNet_preprocessed, nnUNet_results. This is done to automate nnUNet:
 
 ```bash
 vim ~/.bashrc
-
+```
 press on esc then i for insert mode
 at the bottom, write:
 
@@ -92,7 +92,7 @@ at the bottom, write:
 export nnUNet_raw="/path/to/nnUnetFrame/nnUNet_raw"
 export nnUNet_preprocessed="/path/to/nnUnetFrame/nnUNet_preprocessed"
 export nnUNet_results="/path/to/nnUnetFrame/nnUNet_results"
-
+```
 press on esc then write :wq 
 
  
@@ -115,9 +115,9 @@ cd path/to/nnUnetFrame
 
 ###Format Dataset 422:
 
-'''bash
+```bash
 python convert_MICCAI_to_nnUNet.py
-
+```
 
 if it doesn't work , check the paths at the top of the script: 
 MICCAI_test_path, 
@@ -135,37 +135,41 @@ python affine_fix422.py \
     --ref_mod 2 \ 
     --fix_labels
     --inplace
+```
 
-
-Format Dataset 423:
+**Format Dataset 423:**
 ```bash
 python Convert_OpenMS_to_nnUnet.py
+```
 
-
-Format Dataset 424:
+**Format Dataset 424:**
 ```bash
 python convert_openMS2_to_nnUnet.py
 python fix_424_mismatch.py
-
+```
 then after 423 and 424 dataset have been formatted as detailed:
 ```bash
 skullstrip_and_diff_423_424.py
-
+```
 The datasets conversion and pre-processing is done, we can now verify the datasets integrity using nnU-Net.
 Anywhere in the project directory, run:
 
 ###For Dataset421: 
 ```bash
 nnUNetv2_plan_and_preprocess -d 421 --verify_dataset_integrity"
+```
 ###For Dataset422: 
 ```bash
 nnUNetv2_plan_and_preprocess -d 422 --verify_dataset_integrity"
+```
 ###For Dataset423: 
 ```bash
 nnUNetv2_plan_and_preprocess -d 423 --verify_dataset_integrity"
+```
 ###For Dataset424: 
 ```bash
 nnUNetv2_plan_and_preprocess -d 424 --verify_dataset_integrity"
+```
 
 Once this step is done, we can perform nnUNet preprocessing.
 
