@@ -296,5 +296,21 @@ python benchmark.py --dataset_id 422 --labelsTs /path/to/nnUnetFrame/nnUNet_raw/
 ...Same reasoning for dataset 423 and 424, just adapt the dataset id each time
 
 
+After the benchmarking is done, you can analyse the saved results. It is not possible to visually tell which model performs with a better precision.  As the number of case per dataset is rather small, we chose to perform a Wilcoxon signed text (implemented as a python function available in scipy which is installed in monai-dev.If you don't have it, you can run: pip install scipy. in your dedicated conda environment.
+
+We are testing the hypothesis H0: there is no systematic difference between A = nnUnet and B = {SegResNet, lts-AI} , i.e for each metric performed with model A: Ai and model B: Bi, di = |Ai - Bi| are symetric around 0.
+
+Based on the comparison between the p-value and the significativity index alpha, if p-value > alpha:Ho accepted, otherwise Ho rejected, i.e there is a systematic difference between A = nnUnet and B.
+
+We provided the script to perform this test, which generates a csv recap file of the wilcoxon test :
+
+```bash
+python statistics.py --root /path/to/benchmark_results/
+```
+
+
+
+
+END.
 
 
