@@ -9,6 +9,11 @@ Several deep learning methods have been investigated, all showing different stre
 This project is built around **four specific datasets** that must be used for the pipeline to work as intended.  
 However, it is also possible to experiment with **custom datasets**, provided they are available in **`.nii.gz` format** and converted to the **nnU-Net format**.
 
+![Masks predicted with the 3 model and the ground truth mask (GT)](images/424.png)
+
+
+
+
 ---
 
 ## Pre-requisites and Methods
