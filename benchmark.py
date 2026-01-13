@@ -16,8 +16,7 @@ from scipy.ndimage import label
 def load_masks(gt_path, pred_path):
     """
     Load ground-truth and predicted masks from NIfTI files.
-
-    Assumptions:
+We assule that the images have:
     - Same orientation
     - Same voxel space
     - Same shape
@@ -54,27 +53,36 @@ def load_masks(gt_path, pred_path):
 
 def perform_dice(gt_mask, pred_mask, threshold=0.0):
     if gt_mask.shape != pred_mask.shape:
+        #if there is a shape mismatch, we raise an error
         raise ValueError(f"Shape mismatch: GT {gt_mask.shape} vs Pred {pred_mask.shape}")
 
+#we add a binarization to the ground truth mask and the prediction mask for safety, i.e to ensure the images are really binary
     gt_bin = gt_mask > threshold
     pred_bin = pred_mask > threshold
 
+#counting non zero elements
     gt_sum = np.count_nonzero(gt_bin)
     pred_sum = np.count_nonzero(pred_bin)
 
+#We handle limit cases where there's no ground truth lesion or no predicted lesion....
     if gt_sum == 0 and pred_sum == 0:
         return 1.0
     if gt_sum == 0 and pred_sum > 0:
         return 0.0
     if gt_sum > 0 and pred_sum == 0:
         return 0.0
-
+#We count all non-zero elements in the intersection between ground truth and prediction
     intersection = np.count_nonzero(gt_bin & pred_bin)
-    dice = (2.0 * intersection) / (gt_sum + pred_sum)
+    dice = (2.0 * intersection) / (gt_sum + pred_sum) #bbased on the dice formula
     return float(dice)
 
 
 def perform_volume_similarity(gt_mask, pred_mask, threshold=0.0):
+    
+    """
+    This function counts the non-zero voxels for ground Ng truth and predicted masks Np
+    Volume similarity is a comparison between Ng and Np.
+    """
     if gt_mask.shape != pred_mask.shape:
         raise ValueError(f"Shape mismatch: GT {gt_mask.shape} vs Pred {pred_mask.shape}")
 
@@ -85,6 +93,7 @@ def perform_volume_similarity(gt_mask, pred_mask, threshold=0.0):
     V_pred = int(np.count_nonzero(pred_bin))
     abs_diff = abs(V_gt - V_pred)
 
+#Wee handle edge cases
     if V_gt == 0 and V_pred == 0:
         return 1.0, V_gt, V_pred, abs_diff
     if V_gt == 0 and V_pred > 0:
@@ -92,7 +101,7 @@ def perform_volume_similarity(gt_mask, pred_mask, threshold=0.0):
     if V_gt > 0 and V_pred == 0:
         return 0.0, V_gt, V_pred, abs_diff
 
-    vs = 1.0 - (abs_diff / (V_gt + V_pred))
+    vs = 1.0 - (abs_diff / (V_gt + V_pred))   #VS formula
     return float(vs), V_gt, V_pred, abs_diff
 
 
@@ -114,7 +123,7 @@ def perform_mAP_from_prob(
       3) Score each predicted instance (max/mean/p95 prob inside CC)
       4) Sort predictions by score desc
       5) For each IoU threshold tau:
-          - greedy match in ranking order (each GT matched at most once)
+          - we perform a greedy match in ranking order (each GT matched at most once)
           - build precision/recall curve cumulatively
           - AP = area under PR curve (VOC-style)
 
@@ -128,7 +137,8 @@ def perform_mAP_from_prob(
     if gt_mask.shape != pred_prob.shape:
         raise ValueError(f"Shape mismatch: GT {gt_mask.shape} vs Prob {pred_prob.shape}")
 
-    # --- connectivity struct
+    # -Connectivty struct. We caracterize all the neighbour voxels for 1 voxel. Conectivity of 26 for a voxel is like
+    #surrounding the voxel by a 3*3 cube
     if connectivity == 26:
         struct = np.ones((3, 3, 3), dtype=np.int8)
     elif connectivity == 6:
@@ -140,7 +150,8 @@ def perform_mAP_from_prob(
     else:
         raise ValueError("connectivity must be 6 or 26")
 
-    # --- GT instances
+    # GT instances
+    #safety binarization
     gt_bin = gt_mask > 0
     gt_lab, n_gt = label(gt_bin, structure=struct)
     if n_gt == 0:
@@ -155,7 +166,7 @@ def perform_mAP_from_prob(
 
     gt_sizes = np.bincount(gt_lab.ravel(), minlength=n_gt + 1)
 
-    # --- Pred instances from probability
+    # We binarize the predictions' probability maps 
     pred_bin = pred_prob > float(binarize_threshold)
     pred_lab, n_pred = label(pred_bin, structure=struct)
     pred_sizes = np.bincount(pred_lab.ravel(), minlength=n_pred + 1)
@@ -207,7 +218,7 @@ def perform_mAP_from_prob(
 
     results = {"AP_per_iou": {}, "metrics_per_iou": {}}
 
-    # compute AP for each IoU threshold
+    # We compute AP for each IoU threshold
     for tau in iou_thresholds:
         tau = float(tau)
 
@@ -220,7 +231,7 @@ def perform_mAP_from_prob(
             best_j = 0
             best_iou = 0.0
 
-            # candidates: only GT labels that overlap
+            #We look for candidates: only the GT labels that overlap
             pred_vox = (pred_lab == p_label)
             overlap_labels = gt_lab[pred_vox]
             if overlap_labels.size == 0:
@@ -467,6 +478,26 @@ def perform_mAP_from_prob(
 """
 
 def perform_F1(gt_mask, pred_mask, iou_thresholds=(0.25, 0.5), connectivity=26, bin_threshold=0.0):
+    
+    """
+We compare connected components between  ground-truth mask and a predicted mask.
+
+- Both masks are binarized using a configurable threshold.
+- Lesions are defined as connected components using either 6- or 26-connectivity.
+- Each predicted lesion is matched to at most one ground-truth lesion based on IoU.
+- A prediction is counted as a true positive if the IoU exceeds a given threshold.
+- Unmatched predictions are counted as false positives.
+- Unmatched ground-truth lesions are counted as false negatives.
+
+We repeat these steps for multiple IoU thresholds.
+For each threshold, we compute lesion-level precision and recall.
+The final score (`F1`) is obtained by averaging the scores across all thresholds.
+
+This metric focuses on lesion detection quality rather than voxel-wise overlap,
+which is more appropriate for small and sparse MS lesions.It gives us a comparison ground
+with other academic papers that show F1 results rather than mAP
+"""
+ 
     if gt_mask.shape != pred_mask.shape:
         raise ValueError(f"Shape mismatch: GT {gt_mask.shape} vs Pred {pred_mask.shape}")
 
@@ -519,7 +550,7 @@ def perform_F1(gt_mask, pred_mask, iou_thresholds=(0.25, 0.5), connectivity=26, 
     for tau in iou_thresholds:
         tau = float(tau)
         matched_gt = np.zeros(n_gt + 1, dtype=bool)
-
+        #print(matched_gt)
         TP = 0
         FP = 0
 
@@ -540,6 +571,7 @@ def perform_F1(gt_mask, pred_mask, iou_thresholds=(0.25, 0.5), connectivity=26, 
             best_iou = 0.0
 
             candidates = np.where(overlap_counts > 0)[0]
+            #print(candidates)
             for j in candidates:
                 if matched_gt[j]:
                     continue
@@ -555,7 +587,7 @@ def perform_F1(gt_mask, pred_mask, iou_thresholds=(0.25, 0.5), connectivity=26, 
                 matched_gt[best_j] = True
             else:
                 FP += 1
-
+                
         FN = int(n_gt - matched_gt[1:].sum())
         precision = TP / (TP + FP) if (TP + FP) > 0 else 0.0
         recall = TP / n_gt if n_gt > 0 else 0.0
@@ -576,9 +608,6 @@ def perform_F1(gt_mask, pred_mask, iou_thresholds=(0.25, 0.5), connectivity=26, 
     return results
 
 
-# ============================================================
-# Benchmark helpers
-# ============================================================
 
 def list_case_ids_from_labels(labels_dir: str):
     """
@@ -736,8 +765,9 @@ def load_probmap_any(path: str, fg_channel: int = 1) -> np.ndarray:
 #After shape mismatch problem, a fix is provided:
 def align_prob_to_gt(gt, prob, case_id = ""):
     """
-    Ensures prob has same shape as gt by trying common axis permutation
-    gt : (D, H ,W) => We permute prob (D,H,W) until the shapes match
+    Ensures prob has same shape as gt by trying all permutations around a common axis
+    gt : (D, H ,W) => We permute prob (D,H,W) until the shapes match.
+    This function has been added as some  rare cases have different orientation.
     
     """
     #straight forward approach
@@ -759,11 +789,9 @@ def align_prob_to_gt(gt, prob, case_id = ""):
             return p
     raise ValueError(f" Can't align probmap to GT for {case_id} using axes {axes}"
                      f" GT shape = {gt.shape} , prob shape = {prob.shape}")
-# ============================================================
-# Main benchmarking
-# ============================================================
 
 def main():
+    #all the extensions are created here
     parser = argparse.ArgumentParser(description="Simple benchmarking for nnU-Net-format masks: Dice / VS / mAP")
     parser.add_argument("--labelsTs", required=True, help="Path to GT masks folder (nnU-Net format), e.g. labelsTs/")
     parser.add_argument("--models", required=True,
@@ -805,7 +833,7 @@ def main():
     if len(case_ids) == 0:
         raise RuntimeError(f"No label files found in {labelsTs}")
 
-    # Results structures (simple dicts)
+    # Results structures
     DICE_results_dict = {"meta": {"missing": {}}}
     VS_results_dict = {"meta": {"missing": {}}}
     mAP_results_dict = {"meta": {"missing": {}}}
@@ -813,6 +841,7 @@ def main():
 
     # Init per model
     for model_name in model_map.keys():
+        #we initialize all the keys that are going to store the results.
         DICE_results_dict[model_name] = {"scores": [], "per_case": []}
         VS_results_dict[model_name] = {"scores": [], "per_case": [], "V_gt": [], "V_pred": []}
         mAP_results_dict[model_name] = {"scores": [], "per_case": [], "AP_per_iou": {}}
@@ -833,6 +862,8 @@ def main():
             pred_path = find_case_mask(pred_dir, pred_case_id)
             pred_prob_path = find_case_prob(pred_dir, pred_case_id)
             gt_img = nib.load(gt_path).get_fdata().astype(np.float32)
+            
+            #this is a specificity for nnU-Net whih stores probmaps as .npz files 
             if model_name=="nnunet":
                 print("[DEBUG] Looking for", os.path.join(pred_dir, f"{pred_case_id}.npz"))
                 print("[DEBUG] exists ? ", os.path.exists(os.path.join(pred_dir, f"{pred_case_id}.npz")))
@@ -882,11 +913,11 @@ def main():
                     
                     m = perform_mAP_from_prob(
                         gt_mask=gt_img,pred_prob=pred_prob_lesion,
-                        iou_thresholds=iou_thresholds,
+                        iou_thresholds=iou_thresholds, 
                         connectivity=args.connectivity,
-                        binarize_threshold=0.05,      # seuil fixe pour créer les CC
-                        min_cc_size=20,               # filtre bruit (à ajuster si besoin)
-                        score_mode="max",             # score lésion = max prob
+                        binarize_threshold=0.05,      # fixed threshold for creatign the connected components
+                        min_cc_size=20,               # the minimum voxel size of a connected component
+                        score_mode="max",             # lesion score = max prob
                         )
                     
     
@@ -895,9 +926,9 @@ def main():
                         gt_mask=gt_img,pred_prob=prob_img,
                         iou_thresholds=iou_thresholds,
                         connectivity=args.connectivity,
-                        binarize_threshold=0.05,      # seuil fixe pour créer les CC
-                        min_cc_size=20,               # filtre bruit (à ajuster si besoin)
-                        score_mode="max",             # score lésion = max prob
+                        binarize_threshold=0.05,     
+                        min_cc_size=20,               
+                        score_mode="max",
                         )
                     
 
@@ -972,7 +1003,7 @@ def main():
         else:
             F1_results_dict[model_name]["AP_per_iou_mean"] = {}
 
-    # Print results (simple)
+    # Print results 
     print_summary_block("DICE RESULTS", DICE_results_dict)
     print_summary_block("VOLUME SIMILARITY RESULTS", VS_results_dict)
 
@@ -1029,7 +1060,7 @@ def main():
         with open(os.path.join(args.save_json, "F1_results.json"), "w", encoding="utf-8") as f:
             json.dump(F1_results_dict, f, indent=2)            
         
-        print(f"\n[OK] Saved JSON results to: {args.save_json}")
+        print(f"\n Saved JSON results to: {args.save_json}")
 
     print("\nDone.")
 
