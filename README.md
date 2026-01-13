@@ -10,7 +10,9 @@ This project is built around **four specific datasets** that must be used for th
 However, it is also possible to experiment with **custom datasets**, provided they are available in **`.nii.gz` format** and converted to the **nnU-Net format**.
 
 ![Masks predicted with the 3 model and the ground truth mask (GT)](images/424.png)
-
+<p align="center">
+  <img src="images/424.png" width="700">
+</p>
 
 
 
