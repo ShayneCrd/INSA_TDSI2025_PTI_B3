@@ -6,7 +6,7 @@ statistic.py
 
 We run paired Wilcoxon signed-rank tests (non-parametric) on our benchmarking outputs.
 
-Goal (for examiners):
+The goal is:
 - For each dataset (Dataset421 -> Dataset424),
 - For each metric (DICE / VS / mAP),
 - We compare method A = nnUNet against method B = SegResNet and LST-AI (paired per case).
@@ -24,14 +24,6 @@ Input:
     Dataset424/
       ...
 
-Expected JSON structure (from our benchmark.py):
-  {
-    "meta": {"missing": {...}},
-    "nnunet": {"scores": [...], "per_case": [[case_id, score], ...], "stats": {...}},
-    "segresnet": {...},
-    "lst": {...},
-    ...
-  }
 
 We:
 - Load per-case scores for each model.
@@ -60,9 +52,6 @@ except Exception as e:
     ) from e
 
 
-# -----------------------------
-# Utilities: IO and parsing
-# -----------------------------
 
 METRIC_FILES = {
     "DICE": "DICE_results.json",
@@ -141,13 +130,23 @@ def paired_arrays(
     return common, A, B
 
 
-# -----------------------------
-# Wilcoxon testing logic
-# -----------------------------
+
 
 def wilcoxon_nnUNet_vs(A: np.ndarray,B: np.ndarray,alternative: str = "greater") -> dict:
     """
     We run the Wilcoxon signed-rank test on paired samples (A vs B).
+
+We perform a Wilcoxon signed-rank test on paired samples A and B.
+
+- The null hypothesis (H0) states that there is no systematic difference between A and B,
+  i.e. the distribution of paired differences (A − B) is symmetric around zero.
+- The alternative hypothesis (H1) is directional by default ("greater") and tests whether
+  A tends to be larger than B, meaning that nnUNet performs better than the compared method.
+
+The test is applied to paired measurements and operates on the ranks of the absolute
+differences while preserving their sign. Exact zero differences are ignored by the test.
+
+The function returns the test statistic, the p-value, and the number of paired samples.
 
     Important:
     - We test H1: A > B by default ("greater"), because we want to know whether nnUNet
@@ -195,9 +194,7 @@ def summarize_pair(A: np.ndarray, B: np.ndarray) -> dict:
     }
 
 
-# -----------------------------
-# Main traversal
-# -----------------------------
+
 
 def list_dataset_dirs(root: str) -> List[str]:
     """We find Dataset421..Dataset424 subfolders under the benchmark_results root."""
@@ -234,9 +231,9 @@ def main():
     print("\n" + "=" * 80)
     print("WILCOXON PAIRED TESTS (A = nnUNet)")
     print("=" * 80)
-    print(f"[INFO] root       : {root}")
-    print(f"[INFO] alpha      : {args.alpha}")
-    print(f"[INFO] alternative: {args.alternative}")
+    print(f" root       : {root}")
+    print(f"alpha      : {args.alpha}")
+    print(f" alternative: {args.alternative}")
     print("")
 
     for ds_dir in dataset_dirs:
@@ -249,7 +246,7 @@ def main():
             fpath = os.path.join(ds_dir, fname)
             data = safe_load_json(fpath)
             if data is None:
-                print(f"[WARN] Missing {fname} in {ds_name} -> skipping {metric_name}")
+                print(f"[WARNiNG] Missing {fname} in {ds_name} -> skipping {metric_name}")
                 continue
 
             scores = extract_per_case_scores(data)
@@ -268,7 +265,7 @@ def main():
 
             for b_key, b_label in comparisons:
                 if b_key not in scores:
-                    print(f"  [INFO] competitor missing: {b_label} (no key '{b_key}') -> skipped")
+                    print(f"  competitor missing: {b_label} (no key '{b_key}') -> skipped")
                     continue
 
                 b_scores = scores[b_key]
