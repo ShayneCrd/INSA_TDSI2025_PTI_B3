@@ -7,12 +7,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-# ============================================================
-# CONFIG (edit if needed)
-# ============================================================
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_DIR.parent  # assumes script is inside nnUnetFrame/
+REPO_ROOT = SCRIPT_DIR.parent  
 
 # Raw MSLesSeg location (inside repo)
 MSLESSEG_ROOT = REPO_ROOT / "nnUnetFrame" / "MSLesSegDataset"
@@ -33,15 +31,13 @@ TRAIN_MASK_PATTERN = "{patient}_{visit}_MASK.nii.gz"
 
 # Test structure: patient/   (no visits)
 TEST_IMG_PATTERN = "{patient}_{mod}.nii.gz"
-TEST_MASK_PATTERN = "{patient}_MASK.nii.gz"   # <-- adjust if different
+TEST_MASK_PATTERN = "{patient}_MASK.nii.gz"  
 
 SKIP_INCOMPLETE_CASES = True  # if missing modality/mask, skip case instead of crashing
 
 LABELS = {"background": 0, "lesion": 1}
 
-# ============================================================
-# Helpers
-# ============================================================
+
 
 def ensure_dir(p: Path) -> None:
     p.mkdir(parents=True, exist_ok=True)
@@ -69,9 +65,7 @@ class Case:
     images: Dict[str, Path]
     mask: Path
 
-# ============================================================
-# Discovery
-# ============================================================
+
 
 def discover_train_cases(train_root: Path, start_idx: int) -> Tuple[List[Case], int]:
     """
@@ -155,9 +149,7 @@ def discover_test_cases(test_root: Path, start_idx: int) -> Tuple[List[Case], in
 
     return cases, idx
 
-# ============================================================
-# Writing nnU-Net dataset
-# ============================================================
+
 
 def write_case(case: Case, dataset_dir: Path) -> None:
     imagesTr = dataset_dir / "imagesTr"
@@ -220,8 +212,8 @@ def main() -> None:
     train_cases, next_idx = discover_train_cases(train_root, idx0)
     test_cases, _ = discover_test_cases(test_root, next_idx)
 
-    print(f"[INFO] Train cases written to imagesTr/labelsTr: {len(train_cases)}")
-    print(f"[INFO] Test  cases written to imagesTs/labelsTs: {len(test_cases)}")
+    print(f"Train cases written to imagesTr/labelsTr: {len(train_cases)}")
+    print(f" Test  cases written to imagesTs/labelsTs: {len(test_cases)}")
 
     for c in train_cases:
         write_case(c, out_dataset_dir)
@@ -230,7 +222,7 @@ def main() -> None:
 
     write_dataset_json(out_dataset_dir, n_train=len(train_cases), n_test=len(test_cases))
 
-    print(f"[OK] Created nnU-Net dataset at: {out_dataset_dir}")
+    print(f" Created nnU-Net dataset at: {out_dataset_dir}")
 
 if __name__ == "__main__":
     main()
