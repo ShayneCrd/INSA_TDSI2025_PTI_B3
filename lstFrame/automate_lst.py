@@ -14,20 +14,18 @@ from pathlib import Path
 THRESHOLD = "0.40"
 USE_STRIPPED = True
 
-# If you want to run only a subset (e.g. ["SEP_094", "SEP_095"])
+
 FILTER_CASES = None
 
-# Dataset suffix mapping (adjust if one dataset uses a different suffix)
+# Dataset suffix mapping 
 DATASET_SUFFIX = {
     421: "TDSI2025",
     422: "TDSI2025",
     423: "TDSI2025",
-    424: "TDSI2025",  # change here if needed
+    424: "TDSI2025",  
 }
 
-# ============================================================
-# Dataset-specific modality mapping for T1 + FLAIR
-# ============================================================
+
 def get_modality_indices(dataset_id: int):
     if dataset_id == 421:
         return 0, 1  # T1, FLAIR
@@ -40,9 +38,7 @@ def get_modality_indices(dataset_id: int):
     else:
         raise ValueError("dataset_id must be 421 to 424")
 
-# ============================================================
-# Helpers
-# ============================================================
+
 
 def ensure_dir(path: str):
     os.makedirs(path, exist_ok=True)
@@ -147,9 +143,7 @@ def command_builder(case_id: str, images_dir: str, base_out_dir: str, dataset_id
     case_pred_prob_path = os.path.join(output_pred_dir, f"{case_id}_prob.nii.gz")
     return cmd, case_out_dir, case_pred_mask_path, case_pred_prob_path
 
-# ============================================================
-# Paths builder (portable GitHub)
-# ============================================================
+
 
 def resolve_paths(dataset_id: int):
     """
@@ -175,9 +169,7 @@ def resolve_paths(dataset_id: int):
 
     return nnunet_raw_dataset, output_root, output_pred_dir, temp_dir
 
-# ============================================================
-# Main runner
-# ============================================================
+
 
 def run_lst_on_dataset(dataset_id: int):
     nnunet_raw_dataset, output_root, output_pred_dir, temp_dir = resolve_paths(dataset_id)
@@ -196,10 +188,10 @@ def run_lst_on_dataset(dataset_id: int):
         wanted = set(FILTER_CASES)
         case_ids = [c for c in case_ids if c in wanted]
 
-    print(f"[INFO] Dataset={dataset_id} | imagesTs={imagesTs}")
-    print(f"[INFO] Found {len(case_ids)} cases")
-    print(f"[INFO] Output preds dir: {output_pred_dir}")
-    print(f"[INFO] Temp dir: {temp_dir}")
+    print(f" Dataset={dataset_id} | imagesTs={imagesTs}")
+    print(f" Found {len(case_ids)} cases")
+    print(f" Output preds dir: {output_pred_dir}")
+    print(f" Temp dir: {temp_dir}")
 
     missing = []
     failed = []
@@ -222,7 +214,7 @@ def run_lst_on_dataset(dataset_id: int):
 
         cmd, case_out_dir, case_pred_mask_path, case_pred_prob_path = built
 
-        print(f"\n[INFO] Running LST on {case_id}")
+        print(f"\n Running LST on {case_id}")
         clear_temp_dir(str(temp_dir))  # avoid mixing probmaps between cases
 
         try:
@@ -245,8 +237,8 @@ def run_lst_on_dataset(dataset_id: int):
         shutil.copy2(src_prob, case_pred_prob_path)
 
         produced += 1
-        print(f"[OK] Saved mask -> {case_pred_mask_path}   (from {os.path.basename(src_mask)})")
-        print(f"[OK] Saved prob -> {case_pred_prob_path}   (from {os.path.basename(src_prob)})")
+        print(f" Saved mask > {case_pred_mask_path}   (from {os.path.basename(src_mask)})")
+        print(f" Saved prob > {case_pred_prob_path}   (from {os.path.basename(src_prob)})")
 
     print("\n================ SUMMARY ================")
     print(f"Produced predictions: {produced}")
@@ -259,9 +251,7 @@ def run_lst_on_dataset(dataset_id: int):
 
     print(f"\nPredictions folder (for benchmark): {output_pred_dir}")
 
-# ============================================================
-# CLI
-# ============================================================
+
 
 def parse_args():
     p = argparse.ArgumentParser()
