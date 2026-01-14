@@ -11,11 +11,11 @@ fi
 DATASET_NUM="$1"
 FOLDS="${2:-"0 1 2 3 4"}"
 
-# ==========================================
+
 # Resolve paths
 # this script should be located in SegResNetFrame/
 # Repo root = parent directory of SegResNetFrame/
-# ==========================================
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 
@@ -26,9 +26,9 @@ SPLITS="${REPO_ROOT}/nnUnetFrame/nnUNet_preprocessed/${DATASET_ID}/splits_final.
 OUT_ROOT="${REPO_ROOT}/SegResNetFrame/SegResNet_results/cross_validation_training/${DATASET_ID}"
 #OUT_ROOT="${REPO_ROOT}/${DATASET_ID}"
 
-# ==========================================
+
 # Hyperparams per dataset, we observed a different lr required for 422
-# ==========================================
+
 case "${DATASET_NUM}" in
   421)
     MODALITIES="0,1,2"
@@ -64,32 +64,32 @@ case "${DATASET_NUM}" in
     ;;
 esac
 
-# ==========================================
+
 # Sanity checks (we forgot it in last version)
-# ==========================================
+
 echo "========================================"
-echo "[INFO] Repo root   : ${REPO_ROOT}"
-echo "[INFO] Dataset     : ${DATASET_ID}"
-echo "[INFO] nnUNet raw  : ${NNUNET_RAW}"
-echo "[INFO] splits file : ${SPLITS}"
-echo "[INFO] out root    : ${OUT_ROOT}"
-echo "[INFO] folds       : ${FOLDS}"
+echo " Repo root   : ${REPO_ROOT}"
+echo " Dataset     : ${DATASET_ID}"
+echo " nnUNet raw  : ${NNUNET_RAW}"
+echo " splits file : ${SPLITS}"
+echo " out root    : ${OUT_ROOT}"
+echo " folds       : ${FOLDS}"
 echo "========================================"
 
-[[ -d "${NNUNET_RAW}" ]] || { echo "ERROR: missing NNUNET_RAW dir: ${NNUNET_RAW}"; exit 1; }
-[[ -f "${SPLITS}" ]] || { echo "ERROR: missing splits file: ${SPLITS} (run nnUNet plan+preprocess first)"; exit 1; }
+[[ -d "${NNUNET_RAW}" ]] || { echo "ERROR! : missing NNUNET_RAW dir: ${NNUNET_RAW}"; exit 1; }
+[[ -f "${SPLITS}" ]] || { echo "ERROR! : missing splits file: ${SPLITS} (run nnUNet plan+preprocess first)"; exit 1; }
 
 mkdir -p "${OUT_ROOT}"
 
 # Optional: ensure we run from SegResNetFrame so relative python import/paths behave
 cd "${SCRIPT_DIR}"
 
-# ==========================================
+
 # Train loop (just launches train_SegResNet.py)
-# ==========================================
+
 for FOLD in ${FOLDS}; do
   echo "========================================"
-  echo "[INFO] Training SegResNet | dataset=${DATASET_NUM} | fold=${FOLD}"
+  echo " Training SegResNet | dataset=${DATASET_NUM} | fold=${FOLD}"
   echo "========================================"
 
   OUT_DIR="${OUT_ROOT}/fold_${FOLD}"
@@ -107,6 +107,6 @@ for FOLD in ${FOLDS}; do
     --lr "${LR}" \
     2>&1 | tee "${OUT_DIR}/train_fold_${FOLD}.log"
 
-  echo "[INFO] Fold ${FOLD} finished."
+  echo "Fold ${FOLD} finished."
 done
 
