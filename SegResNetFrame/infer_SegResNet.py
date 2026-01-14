@@ -74,9 +74,6 @@ from monai.inferers import sliding_window_inference
 from monai.networks.nets import SegResNet
 
 
-# ----------------------------
-# Helpers: case listing
-# ----------------------------
 _CASE_RE = re.compile(r"^(?P<cid>.+)_(?P<ch>\d{4})\.nii(\.gz)?$")
 
 
@@ -127,9 +124,8 @@ def save_nifti_like(ref_nii_path: str, data: np.ndarray, out_path: str, dtype):
     nib.save(out, out_path)
 
 
-# ----------------------------
 # Checkpoint discovery
-# ----------------------------
+
 def _candidate_ckpt_paths(cv_dir: str, fold: int) -> List[str]:
     """
     Return candidate checkpoint paths in common layouts.
@@ -183,9 +179,9 @@ def discover_cv_ckpts(cv_dir: str, folds: List[int], prefer: str = "best") -> Li
     return ckpts
 
 
-# ----------------------------
+
 # Model loading
-# ----------------------------
+
 def build_model(in_channels: int, device: torch.device) -> SegResNet:
     # binary segmentation: out_channels=1
     return SegResNet(
@@ -221,9 +217,9 @@ def infer_logits(
     return logits
 
 
-# ----------------------------
+
 # Main
-# ----------------------------
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--nnunet_raw", required=True, help="Path to nnUNet_raw/DatasetXXX_NAME")
@@ -396,7 +392,7 @@ def main():
             if n_saved % 10 == 0 or n_saved == len(test_files):
                 print(f"[INFO] Saved {n_saved}/{len(test_files)}")
 
-    print(f"[DONE] Saved predictions to: {args.out}")
+    print(f"Saved predictions to: {args.out}")
     print(f"       Total cases: {n_saved}")
 
 
