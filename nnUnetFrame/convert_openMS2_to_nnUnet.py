@@ -6,9 +6,6 @@ import random
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-# ============================================================
-# Dataset424_TDSI2025 (OPENMS2) - Cross-sectional conversion
-# ============================================================
 
 DATASET_ID = 424
 DATASET_NAME = f"Dataset{DATASET_ID:03d}_TDSI2025"
@@ -52,9 +49,6 @@ CHANNEL_NAMES = {
 }
 
 
-# =============================
-# Helpers
-# =============================
 
 def ensure_dir(p: Path) -> None:
     p.mkdir(parents=True, exist_ok=True)
@@ -102,9 +96,7 @@ def validate_patient(patient_dir: Path) -> Tuple[bool, List[str]]:
     return (len(missing) == 0), missing
 
 
-# =============================
-# Main conversion
-# =============================
+
 
 def convert_openms2_cross_sectional_to_nnunet_424() -> None:
     dataset_dir = TARGET_ROOT / DATASET_NAME
@@ -150,12 +142,12 @@ def convert_openms2_cross_sectional_to_nnunet_424() -> None:
     test_set = valid[n_train:]
 
     print("============================================================")
-    print(f"[INFO] Building {DATASET_NAME} (OPENMS2)")
-    print(f"[INFO] BASE_ROOT: {BASE_ROOT}")
-    print(f"[INFO] Total valid patients: {n_total}")
-    print(f"[INFO] Train/Test split: {len(train_set)}/{len(test_set)} (seed={SEED}, train_fraction={TRAIN_FRACTION})")
+    print(f"Building {DATASET_NAME} (OPENMS2)")
+    print(f"BASE_ROOT: {BASE_ROOT}")
+    print(f"Total valid patients: {n_total}")
+    print(f"Train/Test split: {len(train_set)}/{len(test_set)} (seed={SEED}, train_fraction={TRAIN_FRACTION})")
     if invalid:
-        print(f"[WARN] Invalid folders: {len(invalid)} (first 10)")
+        print(f"Invalid folders: {len(invalid)} (first 10)")
         for name, miss in invalid[:10]:
             print(f"  - {name}: missing {miss}")
     print("============================================================")
@@ -203,18 +195,14 @@ def convert_openms2_cross_sectional_to_nnunet_424() -> None:
         json.dump(dataset_json, f, indent=2)
 
     print("============================================================")
-    print("[OK] Done.")
+    print(" Done.")
     print(f"Dataset folder: {dataset_dir}")
     print(f"imagesTr cases: {tr_cases} | labelsTr: {tr_labels}")
     print(f"imagesTs cases: {ts_cases} | labelsTs: {ts_labels}")
     if tr_labels == 0:
-        print("[WARN] No labels found in training set. nnU-Net training will NOT work without labels.")
+        print(" No labels found in training set. nnU-Net training will NOT work without labels.")
         print("       Add GT masks in patient folders or adjust LABEL_CANDIDATES.")
-    print("============================================================")
-    print("\nNext step:")
-    print(f"  nnUNetv2_plan_and_preprocess -d {DATASET_ID} --verify_dataset_integrity")
-    print("")
-
+  
 if __name__ == "__main__":
     convert_openms2_cross_sectional_to_nnunet_424()
 
