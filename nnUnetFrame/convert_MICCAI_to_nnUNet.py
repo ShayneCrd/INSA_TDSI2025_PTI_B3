@@ -121,14 +121,13 @@ def build_dataset_json(num_training: int) -> None:
     with open(dataset_json_path, "w", encoding="utf-8") as f:
         json.dump(ds, f, indent=2)
 
-    print(f"[OK] dataset.json written: {dataset_json_path}")
+    print(f"[dataset.json written: {dataset_json_path}")
 
 
-# ============================
-# BUILDERS
-# ============================
 
 def build_labelsTr():
+    """Returns the formatted training label file"""
+
     ensure_dir(labelsTr_path)
     missing = []
 
@@ -159,11 +158,11 @@ def build_labelsTr():
         copy_as_niigz(consensus_path, out_path)
 
     if missing:
-        print(f"[WARN] labelsTr: {len(missing)} cases missing. First 10:")
+        print(f" labelsTr: {len(missing)} cases missing. First 10:")
         for x in missing[:10]:
             print("  -", x)
     else:
-        print("[OK] labelsTr complete.")
+        print(" labelsTr complete.")
 
 
 def build_imagesTr():
@@ -199,7 +198,7 @@ def build_imagesTr():
             pass
 
     if missing:
-        print(f"[WARN] imagesTr: {len(missing)} missing entries. First 10:")
+        print(f"imagesTr: {len(missing)} missing entries. First 10:")
         for x in missing[:10]:
             print("  -", x)
     else:
@@ -263,11 +262,11 @@ def build_imagesTs():
             pass
 
     if missing:
-        print(f"[WARN] imagesTs: {len(missing)} missing entries. First 10:")
+        print(f"imagesTs: {len(missing)} missing entries. First 10:")
         for x in missing[:10]:
             print("  -", x)
     else:
-        print("[OK] imagesTs complete.")
+        print("imagesTs complete.")
 
 
 def count_training_labels() -> int:
@@ -287,18 +286,18 @@ def main():
     ensure_dir(imagesTs_path)
 
     # Build train/test folders
-    print("[INFO] Building labelsTr...")
+    print("Building labelsTr...")
     build_labelsTr()
 
-    print("[INFO] Building imagesTr...")
+    print("[Building imagesTr...")
     build_imagesTr()
 
-    print("[INFO] Building imagesTs...")
+    print(" Building imagesTs...")
     build_imagesTs()
 
     # dataset.json
     ntr = count_training_labels()
-    print(f"[INFO] numTraining (labelsTr count): {ntr}")
+    print(f" numTraining (labelsTr count): {ntr}")
     build_dataset_json(num_training=ntr)
 
     print("\n[DONE] Dataset422_TDSI2025 built.")
