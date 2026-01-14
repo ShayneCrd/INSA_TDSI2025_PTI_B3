@@ -6,9 +6,6 @@ import random
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-# =============================
-# CONFIG
-# =============================
 
 DATASET_ID = 423
 DATASET_NAME = f"Dataset{DATASET_ID:03d}_TDSI2025"
@@ -48,9 +45,6 @@ CHANNEL_NAMES = {
 }
 
 
-# =============================
-# HELPERS
-# =============================
 
 def ensure_dir(p: Path) -> None:
     p.mkdir(parents=True, exist_ok=True)
@@ -93,9 +87,7 @@ def validate_patient_folder(pdir: Path) -> Tuple[bool, List[str]]:
     return ok, missing
 
 
-# =============================
-# MAIN
-# =============================
+
 
 def convert_openms_longitudinal_to_nnunet_423() -> None:
     dataset_dir = NNUNET_RAW_ROOT / DATASET_NAME
@@ -143,10 +135,10 @@ def convert_openms_longitudinal_to_nnunet_423() -> None:
     test_set = valid[n_train:]
 
     print("============================================================")
-    print(f"[INFO] Building {DATASET_NAME}")
-    print(f"[INFO] BASE_ROOT: {BASE_ROOT}")
-    print(f"[INFO] Total valid patients: {n_total}")
-    print(f"[INFO] Train/Test split: {len(train_set)}/{len(test_set)} (seed={SEED}, train_fraction={TRAIN_FRACTION})")
+    print(f" Building {DATASET_NAME}")
+    print(f"BASE_ROOT: {BASE_ROOT}")
+    print(f"Total valid patients: {n_total}")
+    print(f"Train/Test split: {len(train_set)}/{len(test_set)} (seed={SEED}, train_fraction={TRAIN_FRACTION})")
     if invalid:
         print(f"[WARN] Invalid patient folders: {len(invalid)} (first 10 below)")
         for name, miss in invalid[:10]:
@@ -190,7 +182,7 @@ def convert_openms_longitudinal_to_nnunet_423() -> None:
         json.dump(dataset_json, f, indent=2)
 
     print("============================================================")
-    print("[OK] Done.")
+    print(" Done.")
     print(f"Dataset folder: {dataset_dir}")
     print(f"imagesTr: {imagesTr}  | cases: {n_written_tr}")
     print(f"labelsTr: {labelsTr}  | labels: {n_written_tr}")
