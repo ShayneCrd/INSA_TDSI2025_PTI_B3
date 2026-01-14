@@ -198,9 +198,7 @@ def convert_openms_longitudinal_to_nnunet_423() -> None:
     print(f"labelsTs: {labelsTs}  | labels: {n_written_ts}")
     print(f"dataset.json written with numTraining={n_written_tr}")
     print("============================================================")
-    print("\nNext step:")
-    print(f"  nnUNetv2_plan_and_preprocess -d {DATASET_ID} --verify_dataset_integrity")
-    print("")
+
 
 
 if __name__ == "__main__":
