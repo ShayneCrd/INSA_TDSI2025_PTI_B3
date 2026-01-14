@@ -2,14 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Train SegResNet (MONAI) for 3D binary segmentation from an nnU-Net raw dataset:
-
-Expected nnU-Net raw structure:
-  DatasetXXX_NAME/
-    ├── imagesTr/   CASE_0000.nii.gz, CASE_0001.nii.gz, ...
-    ├── labelsTr/   CASE.nii.gz
-    ├── imagesTs/   (optional for later inference)
-    └── dataset.json
+Train SegResNet (MONAI) for 3D binary segmentation from an nnU-Net raw dataset
 
 This script trains ONE fold:
 - If --use_splits is provided (splits_final.json), uses that fold's train/val IDs (nnU-Net style CV).
@@ -167,9 +160,9 @@ def main() -> None:
     in_channels = len(modalities)
     patch = tuple(int(x) for x in args.patch.split(","))
 
-    # ----------------------------
+
     # Split train/val case IDs
-    # ----------------------------
+
     all_case_ids = list_case_ids(imagesTr)
     if len(all_case_ids) == 0:
         raise RuntimeError(f"No cases found in {imagesTr}. Do you have *_0000.nii.gz files?")
@@ -193,13 +186,13 @@ def main() -> None:
     if len(train_files) == 0 or len(val_files) == 0:
         raise RuntimeError(f"Empty split: train={len(train_files)} val={len(val_files)}. Check modalities/paths.")
 
-    print(f"[INFO] device={device}")
-    print(f"[INFO] in_channels={in_channels} modalities={modalities}")
-    print(f"[INFO] train_cases={len(train_files)} val_cases={len(val_files)} patch={patch}")
+    print(f"device={device}")
+    print(f"in_channels={in_channels} modalities={modalities}")
+    print(f"train_cases={len(train_files)} val_cases={len(val_files)} patch={patch}")
 
-    # ----------------------------
+ 
     # Transforms
-    # ----------------------------
+
     train_tf = Compose(
         [
             LoadImaged(keys=["image", "label"]),
@@ -267,9 +260,9 @@ def main() -> None:
         collate_fn=list_data_collate,
     )
 
-    # ----------------------------
+   
     # Model / Loss / Optim
-    # ----------------------------
+
     model = SegResNet(
         spatial_dims=3,
         in_channels=in_channels,
@@ -299,11 +292,11 @@ def main() -> None:
         scaler.load_state_dict(ckpt["scaler"])
         best_dice = float(ckpt.get("best_dice", -1.0))
         start_epoch = int(ckpt.get("epoch", 0)) + 1
-        print(f"[INFO] Resumed from {latest_ckpt} at epoch {start_epoch}, best_dice={best_dice:.4f}")
+        print(f" Resumed from {latest_ckpt} at epoch {start_epoch}, best_dice={best_dice:.4f}")
 
-    # ----------------------------
+  
     # Training loop
-    # ----------------------------
+  
     for epoch in range(start_epoch, args.epochs):
         model.train()
         epoch_loss = 0.0
@@ -340,9 +333,9 @@ def main() -> None:
 
         epoch_loss /= max(1, n_steps)
 
-        # ----------------------------
+   
         # Validation
-        # ----------------------------
+  
         model.eval()
         dice_metric.reset()
 
@@ -381,7 +374,7 @@ def main() -> None:
                     gt_pos = int(y_bin.sum().item())
                     pr_pos = int(pred_bin.sum().item())
                     print(
-                        f"[DEBUG] val GT_pos_vox={gt_pos} | PRED_pos_vox={pr_pos} | "
+                        f" val GT_pos_vox={gt_pos} | PRED_pos_vox={pr_pos} | "
                         f"logits_min={float(logits.min().item()):.3f} logits_max={float(logits.max().item()):.3f}"
                     )
 
@@ -420,9 +413,9 @@ def main() -> None:
                 },
                 best_ckpt,
             )
-            print(f"[OK] New best val_dice={best_dice:.4f} -> saved {best_ckpt}")
+            print(f"New best val_dice={best_dice:.4f} -> saved {best_ckpt}")
 
-    print(f"[DONE] Training finished. Best val dice = {best_dice:.4f}")
+    print(f"Training finished. Best val dice = {best_dice:.4f}")
     print(f"  best  : {best_ckpt}")
     print(f"  latest: {latest_ckpt}")
 
