@@ -52,9 +52,7 @@ TEST_MODALITY_FILES = {
 CASE_PREFIX = "MICCAI2016"
 
 
-# ============================
-# HELPERS
-# ============================
+
 
 def ensure_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
@@ -275,9 +273,6 @@ def count_training_labels() -> int:
     return len([f for f in os.listdir(labelsTr_path) if f.endswith(".nii.gz")])
 
 
-# ============================
-# MAIN
-# ============================
 
 def main():
     # Ensure target dirs exist (you said they are created, but safe)
