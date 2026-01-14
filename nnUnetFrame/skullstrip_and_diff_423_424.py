@@ -6,9 +6,7 @@ import numpy as np
 import nibabel as nib
 import re
 
-# ===========================
-# PATHS (EDIT IF NEEDED)
-# ===========================
+
 
 NNUNET_ROOT = Path(__file__).resolve().parent
 
@@ -22,11 +20,11 @@ OPENMS_LONG_ROOT = NNUNET_ROOT / "open_ms_data-master/longitudinal/coregistered"
 DS424 = NNUNET_RAW / "Dataset424_TDSI2025"
 OPENMS2_CROSS_ROOT = NNUNET_RAW / "open_ms_data-master/cross_sectional/coregistered"
 _CASE_RE = re.compile(r"^(?P<cid>.+)_(?P<ch>\d{4})\.nii(\.gz)?$")
-# ===========================
+
 # SETTINGS
-# ===========================
+
 OVERWRITE_MASKED = True     # overwrite images after masking
-OVERWRITE_DIFF = False      # if diff channels exist, overwrite them?
+OVERWRITE_DIFF = False      # if diff channels exist, overwrite them
 MASK_DTYPE = np.float32
 
 # 423: channels 0..5 exist (6-channel input)
@@ -43,9 +41,7 @@ DIFF_CHANNELS = {
 DS424_CHANNELS = [0, 1, 2, 3]
 
 
-# ===========================
-# IO HELPERS
-# ===========================
+
 def load_nii(path: Path) -> nib.Nifti1Image:
     return nib.load(str(path))
 
@@ -89,7 +85,7 @@ def get_case_ids(images_dir: Path) -> list[str]:
     """
     Return sorted unique case IDs from nnUNet-style files:
       CASEID_0000.nii.gz, CASEID_0001.nii.gz, ...
-    Example: OPENMS_0002_0000.nii.gz -> case_id = OPENMS_0002
+    Ex: OPENMS_0002_0000.nii.gz -> case_id = OPENMS_0002
     """
     case_ids = set()
     for f in images_dir.iterdir():
@@ -101,9 +97,7 @@ def get_case_ids(images_dir: Path) -> list[str]:
         case_ids.add(m.group("cid"))
     return sorted(case_ids)
 
-# ===========================
-# CORE OPS
-# ===========================
+
 def apply_brainmask_to_channel(img_path: Path, bm_path: Path, overwrite: bool) -> None:
     """
     image := image * (brainmask>0). Saves float32.
@@ -143,8 +137,8 @@ def compute_and_save_diff(out_path: Path, img_a_path: Path, img_b_path: Path, ov
     if a.shape != b.shape:
         raise RuntimeError(f"Diff shape mismatch: {img_a_path} {a.shape} vs {img_b_path} {b.shape}")
 
-    # NOTE: we assume aligned already (coregistered). If you want a stricter check:
-    # if not np.allclose(a_nii.affine, b_nii.affine, atol=1e-4): raise ...
+    # NOTE: we assume aligned already (coregistered)
+   
 
     diff = a - b
     save_nii(diff, a_nii, out_path)
@@ -179,12 +173,10 @@ def update_dataset_json_for_423(ds423_dir: Path) -> None:
     with open(js_path, "w") as f:
         json.dump(js, f, indent=2)
 
-    print("[OK] Updated Dataset423 dataset.json channel_names to include diff channels 6..8")
+    print(" Updated Dataset423 dataset.json channel_names to include diff channels 6..8")
 
 
-# ===========================
-# PIPELINES
-# ===========================
+
 def process_dataset423():
     print("\n==============================")
     print("Dataset423: brainmask + diff channels")
@@ -224,7 +216,7 @@ def process_dataset423():
                 compute_and_save_diff(out_path, a_path, b_path, overwrite=OVERWRITE_DIFF)
 
     update_dataset_json_for_423(DS423)
-    print("[DONE] Dataset423 processed.")
+    print("Dataset423 processed.")
 
 
 def process_dataset424():
@@ -235,11 +227,11 @@ def process_dataset424():
     for split in ["imagesTr", "imagesTs"]:
         images_dir = DS424 / split
         if not images_dir.exists():
-            print(f"[WARN] Missing {images_dir}, skipping.")
+            print(f" Missing {images_dir}, skipping.")
             continue
 
         case_ids = get_case_ids(images_dir)
-        print(f"[INFO] {split}: {len(case_ids)} cases")
+        print(f"{split}: {len(case_ids)} cases")
 
         for cid in case_ids:
             bm = find_patient_brainmask_cross(cid)
@@ -253,19 +245,19 @@ def process_dataset424():
 
                 apply_brainmask_to_channel(img, bm, overwrite=OVERWRITE_MASKED)
 
-    print("[DONE] Dataset424 processed.")
+    print(" Dataset424 processed.")
 
 
 def main():
     # basic guards
     """
     if not DS423.exists():
-        print(f"[WARN] {DS423} not found. Skipping Dataset423.")
+        print(f" {DS423} not found. Skipping Dataset423.")
     else:
         process_dataset423()
     """
     if not DS424.exists():
-        print(f"[WARN] {DS424} not found. Skipping Dataset424.")
+        print(f"{DS424} not found. Skipping Dataset424.")
     else:
         process_dataset424()
 
