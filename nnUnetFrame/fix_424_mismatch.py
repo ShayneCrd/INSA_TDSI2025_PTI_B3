@@ -14,9 +14,7 @@ import os
 from pathlib import Path
 import SimpleITK as sitk
 
-# ============================
-# CONFIG
-# ============================
+
 NNUNET_ROOT = Path(__file__).resolve().parent
 DATASET_DIR = NNUNET_ROOT / "nnUNet_raw/Dataset424_TDSI2025"
 IMAGES_TR = DATASET_DIR / "imagesTr"
@@ -27,9 +25,7 @@ LABELS_TS = DATASET_DIR / "labelsTs"
 # FLAIR channel index
 FLAIR_CHANNEL = 3  # OPENMS2_xxxx_0003.nii.gz
 
-# ============================
-# CORE FUNCTION
-# ============================
+
 
 def resample_label_to_reference(label_path: Path, ref_image_path: Path) -> None:
     """
@@ -53,12 +49,12 @@ def process_split(images_dir: Path, labels_dir: Path, split_name: str) -> None:
     print(f"\n=== Processing {split_name} ===")
 
     if not labels_dir.exists():
-        print(f"[INFO] {labels_dir} does not exist, skipping.")
+        print(f"{labels_dir} does not exist, skipping.")
         return
 
     labels = sorted(labels_dir.glob("*.nii*"))
     if not labels:
-        print(f"[INFO] No labels found in {labels_dir}, skipping.")
+        print(f" No labels found in {labels_dir}, skipping.")
         return
 
     fixed = 0
@@ -78,12 +74,10 @@ def process_split(images_dir: Path, labels_dir: Path, split_name: str) -> None:
 
     print(f"[OK] {fixed} labels fixed in {split_name}")
     if missing_ref > 0:
-        print(f"[WARN] {missing_ref} cases skipped due to missing FLAIR")
+        print(f"{missing_ref} cases skipped due to missing FLAIR")
 
 
-# ============================
-# MAIN
-# ============================
+
 
 def main():
     print("==============================================")
@@ -95,8 +89,7 @@ def main():
     process_split(IMAGES_TS, LABELS_TS, "labelsTs")
 
     print("\nDone.")
-    print("Next step:")
-    print("  nnUNetv2_plan_and_preprocess -d 424 --verify_dataset_integrity")
+
 
 
 if __name__ == "__main__":
